@@ -871,6 +871,13 @@
      siblings count is not set.
    :let [bindings] -- just a regular let, all bindings are visible to the next
      forms.
+   :bypass other-widget-or-falsey -- provides an alternative path that bypasses the
+     nominal body.
+     If the value passed to :bypass is neither nil or false, it is returned immediately
+     and the rest of the widget body is not evaluated.
+     Otherwise, evaluation continues normally.
+     This is intended for non-nominal cases (e.g. loading states, placeholders,
+     empty states), where the main path should be skipped.
    :get [SomeClass1 ... SomeClassN]
      -- shortcut for :get {:value-of [SomeClass1 ... SomeClassN]}
    :get {a AClass b :some/name :value-of [AnotherClass SomeClass.somePropOf]} -- introduces a, b, another-class (kebab-cased version of AnotherClass) and some-prop (kebab-cased version of somePropOf) in the local scope for
@@ -1058,6 +1065,7 @@
                      (-widget-cont ~(assoc env :key ksym) ~@forms))
       :-impl-repl-point (expand-repl-point &env env v forms)
       :let `(let ~v (-widget-cont ~env ~@forms))
+      :bypass `(or ~v (-widget-cont ~env ~@forms))
       :watch
       (if-some [[binding expr & more] (seq v)]
         (let [[opts & more] (collect-options more

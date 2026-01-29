@@ -710,6 +710,42 @@ Example:
 
 Here, `progress-notifier` receives interpolated (animated) values of `progress`. You can pass it down to a `CustomPainter` to trigger repaints without forcing the whole widget tree to rebuild. It’s a simple way to decouple “data changes” from “widget rebuilds.”
 
+### Keeping the main branch focused on the nominal path: the `:bypass` directive
+
+We like widget bodies to be *straightforward*: readable from top to bottom, and primarily concerned with the **nominal path** — the structure and logic that apply when things are in their expected state.
+
+Non-nominal cases such as loading states, placeholders, or empty states are common and legitimate, but mixing them directly into the main body tends to obscure intent. Inline conditionals blur the distinction between what the widget is *about* and the situations in which it temporarily cannot follow its nominal path, plus they make for ugly indented code.
+
+```clojure
+;; WITHOUT :bypass
+
+:watch [result some-future]
+(if result
+  (f/widget
+    ; nominal path displaying the result
+    ...
+    (m/Text (str result))
+  (f/widget
+    ; placeholder, spinner, progress bar
+    ...)
+
+;; WITH :bypass
+:watch [result some-future]
+:bypass (when-not result
+          (f/widget
+            ; placeholder, spinner, progress bar
+            ...))
+; nominal path displaying the result
+...
+(m/Text (str result)
+```
+
+The `:bypass` directive is a deliberate design choice to keep that separation explicit. It provides an alternative path that bypasses the nominal body when appropriate, allowing non-nominal cases to be handled clearly and intentionally. Thus the nominal path continues on the main chaining of the current widget.
+
+If the value passed to `:bypass` is non-nil, it is returned immediately and the rest of the widget body is not evaluated. Otherwise, evaluation continues normally along the nominal path.
+
+By making non-nominal cases explicit and structurally separate, `:bypass` helps keep widget bodies focused, linear, and easy to reason about. The nominal path remains the default and most visible story, while alternative paths are handled deliberately rather than woven into the main flow.
+
 ## Data, I/O and Side Effects
 
 ## Drawing
